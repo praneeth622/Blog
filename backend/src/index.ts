@@ -12,15 +12,12 @@ const app = new Hono<{
   }
 }>()
 
-app.route('/api/v1/blog',blogRoute)
-app.route('/api/v1/user',userRoute)
+app.route('/api/v1/user', userRoute)
+app.route('/api/v1/blog', blogRoute)
 
-app.get("/", async (c) => {
-  console.log("Hit")
-  return c.json({
-    Hi:"Connevted"
-  })
-})
+app.get('/test', (c) => {
+  return c.json({ message: 'Test route is working' });
+});
 
 app.use('/message/*', async (c, next) => {
   await next()

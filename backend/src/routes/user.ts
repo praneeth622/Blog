@@ -10,45 +10,53 @@ export const userRoute = new Hono<{
   }
 }>();
 
-userRoute.post("/api/v1/user/signup", async (c) => {
-  try{
+userRoute.post('/signup', async (c) => {
+  console.log('Received request on /api/v1/user/signup');
+  try {
+    const prisma = new PrismaClient({
+      //@ts-ignore
+      datasourceUrl: c.env.DATABASE_URL,
+    }).$extends(withAccelerate());
 
-  }
-  catch(err){
-    console.log(err)
-  }
-  const prisma = new PrismaClient({
-    //@ts-ignore
-    datasourceUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
+    const body = await c.req.json();
+    console.log('User data is ', body);
 
-  const body = await c.req.json();
-  console.log("User data is ", body);
-
-  const user = await prisma.user.create({
-    data: {
-      email: body.email,
-      password: body.password,
-    },
-  });
-
-  //user Verification
-  if (!user) {
-    return Response.json({
-      message: "Failed to sign up ",
+    const user = await prisma.user.create({
+      data: {
+        email: body.email,
+        password: body.password,
+      },
     });
+
+    // User Verification
+    if (!user) {
+      return c.json(
+        {
+          message: 'Failed to sign up',
+        },
+        404
+      );
+    }
+
+    // JWT token
+    //@ts-ignore
+    const token = await sign({ id: user.id }, c.env.JWT_SECRET);
+
+    return c.json({
+      jwt: token,
+    });
+  } catch (err) {
+    console.log('Error:', err);
+    return c.json(
+      {
+        message: 'Internal Server Error',
+      },
+      500
+    );
   }
-
-  //jwt token
-  //@ts-ignore
-  const token = await sign({ id: user.id }, c.env.JWT_SECRET);
-
-  return c.json({
-    jwt: token,
-  });
 });
 
-userRoute.post("/api/v1/user/signin", async (c) => {
+userRoute.post("/signin", async (c) => {
   const prisma = new PrismaClient({
     //@ts-ignore
     datasourceUrl: c.env.DATABASE_URL,
