@@ -11,6 +11,12 @@ export const userRoute = new Hono<{
 }>();
 
 userRoute.post("/api/v1/user/signup", async (c) => {
+  try{
+
+  }
+  catch(err){
+    console.log(err)
+  }
   const prisma = new PrismaClient({
     //@ts-ignore
     datasourceUrl: c.env.DATABASE_URL,
@@ -74,7 +80,7 @@ userRoute.post("/api/v1/user/signin", async (c) => {
     });
   } catch (err) {
     return c.json({
-      Message: "Error in login",
+      Message: err,
     });
   }
 });

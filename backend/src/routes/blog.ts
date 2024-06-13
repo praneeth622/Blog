@@ -2,35 +2,40 @@ import { Hono } from "hono";
 import {  Prisma, PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { sign, verify } from "hono/jwt";
+import { JWTPayload } from "hono/utils/jwt/types";
 
 export const blogRoute = new Hono<{
     Bindings:{
         DATABASE_URL :string
         JWT_SECRET:string
+    },
+    Variables:{
+      userId:JWTPayload[string]
     }
 }>();
 
-blogRoute.use("/blog/*", async (c, next) => {
-  //fetch the header
-  const header = c.req.header("autharization") || "";
+blogRoute.use("/*", async (c, next) => {
+  // fetch the header
+  const authHeader = c.req.header("autharization") || "";
 
   //verify the jwt
-  //@ts-ignore
-  const response = await verify(header, c.env.JWT_SECRET);
+  const user = await verify(authHeader, c.env.JWT_SECRET);
 
-  if (!response.id) {
-    c.status(403);
+  if(user){
+    c.set('userId', user.id)
+    await next()
+  }
+  else{
+    c.status(411)
     return c.json({
-      message: "User unauthoiraize",
-    });
-  } else {
-    next();
+      message:"User not found"
+    })
   }
 });
 
 blogRoute.post("/", async(c) => {
     const body = await c.req.json()
-    // const userId = await c.get('userId');
+    const userId = await c.get('userId');
     //initializing prisma
     const prisma = new PrismaClient({
 		datasourceUrl: c.env?.DATABASE_URL	,
@@ -41,7 +46,7 @@ blogRoute.post("/", async(c) => {
         data:{
             title:body.title,
             content:body.content,
-            authorId: '1'
+            authorId: String(userId)
         }
     })
   return c.json({
