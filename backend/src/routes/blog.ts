@@ -3,6 +3,7 @@ import { Prisma, PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { sign, verify } from "hono/jwt";
 import { JWTPayload } from "hono/utils/jwt/types";
+import z from 'zod'
 
 export const blogRoute = new Hono<{
   Bindings: {
@@ -13,6 +14,8 @@ export const blogRoute = new Hono<{
     userId: JWTPayload[string];
   };
 }>();
+
+
 
 blogRoute.use("/", async (c, next) => {
   // fetch the header
@@ -40,6 +43,13 @@ blogRoute.post("/", async (c) => {
   }).$extends(withAccelerate());
 
   const body = await c.req.json();
+  const {success,error} = signupInput.safeParse(body);
+  if(!success || error){
+    c.status(411)
+    return c.json({
+      message:"Input validation is not matched"
+    })
+  }
   const post = await prisma.post.create({
     data: {
       title: body.title,
@@ -73,6 +83,16 @@ blogRoute.put("/", async (c) => {
   return c.text("updated post");
 });
 
+blogRoute.get("/bulk", async (c) => {
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env?.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  const posts = await prisma.post.findMany();
+
+  return c.json(posts);
+});
+
 blogRoute.get("/:id", async (c) => {
   const id = c.req.param("id");
   const prisma = new PrismaClient({
@@ -88,12 +108,4 @@ blogRoute.get("/:id", async (c) => {
   return c.json(post);
 });
 
-blogRoute.get("/bulk", async (c) => {
-  const prisma = new PrismaClient({
-    datasourceUrl: c.env?.DATABASE_URL,
-  }).$extends(withAccelerate());
 
-  const posts = await prisma.post.findMany({});
-
-  return c.json(posts);
-});
