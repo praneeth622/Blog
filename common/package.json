@@ -1,7 +1,7 @@
 {
-  "name": "@blog.website/common-app",
+  "name": "@blog.website/common",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
