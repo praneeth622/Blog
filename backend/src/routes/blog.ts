@@ -4,7 +4,7 @@ import { withAccelerate } from "@prisma/extension-accelerate";
 import { sign, verify } from "hono/jwt";
 import { JWTPayload } from "hono/utils/jwt/types";
 import z from 'zod'
-
+import { signupInput } from '../../../common/src/index'
 export const blogRoute = new Hono<{
   Bindings: {
     DATABASE_URL: string;
